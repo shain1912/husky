@@ -49,19 +49,19 @@ public:
   // 전진 (150 -> 110으로 500ms 부트스트랩)
   void Forward(int16_t speed) {
     int16_t speeds[4] = {speed, speed, speed, speed};
-    setMotorSpeeds(speeds, 150, 110, 500);
+    setMotorSpeeds(speeds, 200, 110, 600);
   }
 
   // 제자리 좌회전 (200 -> 110으로 500ms 부트스트랩)
   void TurnLeft(int16_t speed) {
     int16_t speeds[4] = {-speed, speed, -speed, speed};
-    setMotorSpeeds(speeds, 200, 110, 500);
+    setMotorSpeeds(speeds, 220, 110, 600);
   }
 
   // 제자리 우회전 (200 -> 110으로 500ms 부트스트랩)
   void TurnRight(int16_t speed) {
     int16_t speeds[4] = {speed, -speed, speed, -speed};
-    setMotorSpeeds(speeds, 200, 110, 500);
+    setMotorSpeeds(speeds, 220, 110, 600);
   }
 
   void Stop() {
