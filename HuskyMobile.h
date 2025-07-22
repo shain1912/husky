@@ -37,6 +37,7 @@ public:
   void Backward(int16_t speed = 100);
   void TurnLeft(int16_t speed = 100);
   void TurnRight(int16_t speed = 100);
+  void SmoothTurn(int16_t forward_speed, float turn_ratio); // 스무스 회전
   void Stop();
 
 private:

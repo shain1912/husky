@@ -41,21 +41,43 @@ void HuskyMobile::Direction(bool left, bool right) {
 }
 
 void HuskyMobile::Speed(int16_t left_speed, int16_t right_speed) {
-  // 왼쪽 바퀴들 (Front Left + Rear Left)
-  bool left_reverse = left_speed < 0;
-  if (left_reverse) left_speed = -left_speed;
-  if (left_speed > 255) left_speed = 255;
-
-  runMotor(_fl_in1, _fl_in2, _fl_en, left_speed, left_reverse != _left_advance);
-  runMotor(_rl_in1, _rl_in2, _rl_en, left_speed, left_reverse != _left_advance);
-
-  // 오른쪽 바퀴들 (Front Right + Rear Right)
-  bool right_reverse = right_speed < 0;
-  if (right_reverse) right_speed = -right_speed;
-  if (right_speed > 255) right_speed = 255;
-
-  runMotor(_fr_in1, _fr_in2, _fr_en, right_speed, right_reverse != _right_advance);
-  runMotor(_rr_in1, _rr_in2, _rr_en, right_speed, right_reverse != _right_advance);
+  // 4륜 차량용 스무스 회전 알고리즘
+  // 회전시 안쪽 바퀴는 느리게, 바깥쪽 바퀴는 빠르게
+  
+  int16_t fl_speed, fr_speed, rl_speed, rr_speed;
+  
+  if (left_speed == right_speed) {
+    // 직진: 모든 바퀴 같은 속도
+    fl_speed = fr_speed = rl_speed = rr_speed = left_speed;
+  } else {
+    // 회전: 차동 제어 적용
+    int16_t speed_diff = right_speed - left_speed;
+    int16_t base_speed = (left_speed + right_speed) / 2;
+    
+    // 회전 반경을 고려한 속도 분배
+    // 앞바퀴와 뒷바퀴 간격으로 인한 속도 차이 보정
+    float turn_factor = 0.7;  // 회전 시 속도 차이 조정 (0.5~1.0)
+    
+    if (speed_diff > 0) {
+      // 우회전: 왼쪽 바퀴들 느리게, 오른쪽 바퀴들 빠르게
+      fl_speed = left_speed;
+      rl_speed = left_speed * turn_factor;  // 뒷바퀴는 더 느리게
+      fr_speed = right_speed;
+      rr_speed = right_speed * turn_factor;
+    } else {
+      // 좌회전: 오른쪽 바퀴들 느리게, 왼쪽 바퀴들 빠르게  
+      fr_speed = right_speed;
+      rr_speed = right_speed * turn_factor;  // 뒷바퀴는 더 느리게
+      fl_speed = left_speed;
+      rl_speed = left_speed * turn_factor;
+    }
+  }
+  
+  // 각 바퀴 독립 제어
+  runMotor(_fl_in1, _fl_in2, _fl_en, abs(fl_speed), fl_speed < 0);
+  runMotor(_fr_in1, _fr_in2, _fr_en, abs(fr_speed), fr_speed < 0);
+  runMotor(_rl_in1, _rl_in2, _rl_en, abs(rl_speed), rl_speed < 0);
+  runMotor(_rr_in1, _rr_in2, _rr_en, abs(rr_speed), rr_speed < 0);
 }
 
 void HuskyMobile::Speed4(int16_t fl, int16_t fr, int16_t rl, int16_t rr) {
@@ -79,6 +101,16 @@ void HuskyMobile::TurnLeft(int16_t speed) {
 
 void HuskyMobile::TurnRight(int16_t speed) {
   Speed(speed, -speed);
+}
+
+void HuskyMobile::SmoothTurn(int16_t forward_speed, float turn_ratio) {
+  // turn_ratio: -1.0(완전좌회전) ~ 0(직진) ~ 1.0(완전우회전)
+  
+  int16_t left_speed = forward_speed * (1.0 - turn_ratio);
+  int16_t right_speed = forward_speed * (1.0 + turn_ratio);
+  
+  // 4륜 차동 제어로 스무스한 회전
+  Speed(left_speed, right_speed);
 }
 
 void HuskyMobile::Stop() {
